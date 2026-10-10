@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NUKEMAP / open map blast visualizer</title>
+    <meta name="description" content="An educational nuclear effects visualizer with OpenStreetMap layers." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div class="brand"><span class="brand-mark">N</span><div><p class="eyebrow">FIELD STUDY / 01</p><h1>NUKEMAP</h1></div></div>
+        <div class="topbar-right"><span class="live-dot"></span><span>EDUCATIONAL SIMULATION</span><span class="topbar-rule"></span><span id="utc-time">--:--:-- UTC</span></div>
+      </header>
+
+      <section class="intro">
+        <div><p class="eyebrow orange">GEOSPATIAL EFFECTS MODEL</p><h2>See the scale.<br /><em>Understand the distance.</em></h2></div>
+        <p class="intro-copy">A visual sandbox for exploring how yield changes the footprint of a nuclear detonation. Place a point, tune the input, and read the rings against the terrain.</p>
+      </section>
+
+      <section class="workspace">
+        <aside class="control-panel">
+          <div class="panel-heading"><span class="section-number">01</span><div><p class="eyebrow">SCENARIO</p><h3>Set the event</h3></div></div>
+          <label class="field-label" for="preset">Preset location</label>
+          <select id="preset"><option value="nyc">New York City</option><option value="dc">Washington, D.C.</option><option value="tokyo">Tokyo</option><option value="kyiv">Kyiv</option><option value="custom">Custom point</option></select>
+          <div class="location-readout"><span class="pin-icon">⌖</span><div><span id="location-name">Midtown Manhattan</span><small id="coordinates">40.7580° N, 73.9855° W</small></div></div>
+
+          <label class="field-label" for="weapon">Effect preset</label>
+          <select id="weapon"><option value="nuclear">Nuclear device</option><option value="icbm">Non-nuclear ICBM</option><option value="rods">Rods from God</option><option value="beam">Particle accelerator beam</option><option value="hypersonic">Hypersonic missile</option></select>
+
+          <div class="control-block"><div class="label-row"><label class="field-label" for="yield">Energy scale</label><span class="value-badge"><output id="yield-output">100</output> <span id="yield-unit">kt</span></span></div><input id="yield" type="range" min="1" max="1000" value="100" step="1" /><div class="range-notes"><span>low</span><span>high</span></div></div>
+          <div class="quick-yields"><button data-yield="15">15 kt</button><button data-yield="100" class="selected">100 kt</button><button data-yield="500">500 kt</button><button data-yield="1000">1 Mt</button></div>
+
+          <div id="weapon-settings" class="control-block"></div>
+          <div class="divider"></div>
+          <button id="simulate" class="simulate-button"><span>＋</span> ADD IMPACT + RUN TOTALS</button>
+          <button id="clear-all" class="text-button clear-button">× <span>Clear all impacts</span></button>
+          <p class="impact-count"><span id="impact-count">0</span> impact points stored</p>
+          <button id="reset" class="text-button">↺ <span>Reset scenario</span></button>
+          <p class="disclaimer">Approximate educational model. Real effects depend on terrain, weather, construction, and many other variables.</p>
+        </aside>
+
+        <section class="map-card">
+          <div id="map" class="map"></div>
+          <div class="map-toolbar"><div class="toolbar-left"><button id="satellite-toggle" class="toolbar-button active">▧ <span>OSM STANDARD</span></button><button id="road-toggle" class="toolbar-button">□ <span>OSM HOT</span></button><button id="pov-open" class="toolbar-button">◉ <span>POV VIEW</span></button></div><div class="toolbar-right"><span class="map-note">CLICK MAP TO MOVE GROUND ZERO</span><span class="scale-line"></span><span>2 km</span></div></div>
+          <div id="map-status" class="map-status">OpenStreetMap layer active · no API key or billing required.</div>
+          <div id="pov-overlay" class="pov-overlay" hidden><button id="pov-close" class="pov-close">×</button><div class="pov-vignette"></div><div class="pov-sky"></div><div class="pov-horizon"></div><div class="pov-crosshair">＋</div><div class="pov-copy"><p class="eyebrow orange">FIRST-PERSON REPLAY / ABSTRACT</p><h4 id="pov-title">Impact view</h4><p id="pov-status">A cinematic ground-level visualization of the selected aftermath.</p><button id="pov-replay" class="pov-replay">REPLAY EVENT</button></div></div>
+        </section>
+      </section>
+
+      <section id="impact-report" class="impact-report" hidden>
+        <div class="impact-heading"><div><p class="eyebrow orange">SIMULATION OUTPUT / ILLUSTRATIVE ONLY</p><h3>Estimated human and economic impact</h3></div><span class="report-stamp">MODEL RUN COMPLETE</span></div>
+        <div class="impact-grid"><div class="impact-metric"><span class="metric-label">EST. PROPERTY DAMAGE</span><strong id="damage-output">$0</strong><small>replacement-value approximation</small></div><div class="impact-metric"><span class="metric-label">EST. FATALITIES</span><strong id="deaths-output">0</strong><small>daytime exposed-population approximation</small></div><div class="impact-metric"><span class="metric-label">PEOPLE IN SEVERE BLAST ZONE</span><strong id="affected-output">0</strong><small>within the modeled 5 psi ring</small></div></div>
+        <p class="model-note">This is a simplified educational model. Add multiple impact points and the report aggregates them. It assumes static population density and broad replacement-value density; it does not account for sheltering, weather, time of day, emergency response, building variation, fallout, or actual census data.</p>
+      </section>
+
+      <section class="effects-section">
+        <div class="effects-heading"><div><p class="eyebrow orange">READOUT / EFFECT RADII</p><h3>What the rings represent</h3></div><div class="yield-readout"><span>SELECTED YIELD</span><strong id="yield-large">100 kt</strong></div></div>
+        <div class="effects-grid">
+          <article class="effect-card fireball"><div class="card-top"><span class="ring-swatch"></span><span class="effect-tag">01 / CORE</span></div><h4 id="effect-title-0">Fireball</h4><p id="effect-copy-0">Vaporizes everything within the incandescent core.</p><div class="radius"><strong id="fireball-radius">0.21</strong><span>km radius</span></div></article>
+          <article class="effect-card shock"><div class="card-top"><span class="ring-swatch"></span><span class="effect-tag">02 / BLAST</span></div><h4 id="effect-title-1">Severe blast</h4><p id="effect-copy-1">Approx. 5 psi overpressure; major structural damage.</p><div class="radius"><strong id="shock-radius">1.51</strong><span>km radius</span></div></article>
+          <article class="effect-card thermal"><div class="card-top"><span class="ring-swatch"></span><span class="effect-tag">03 / HEAT</span></div><h4 id="effect-title-2">Thermal pulse</h4><p id="effect-copy-2">Third-degree burns for exposed skin under clear conditions.</p><div class="radius"><strong id="thermal-radius">4.74</strong><span>km radius</span></div></article>
+          <article class="effect-card fallout"><div class="card-top"><span class="ring-swatch"></span><span class="effect-tag">04 / CONTEXT</span></div><h4 id="effect-title-3">Fallout corridor</h4><p id="effect-copy-3">Downwind zone shown as a broad orientation guide.</p><div class="radius"><strong id="fallout-radius">18.7</strong><span>km length</span></div></article>
+        </div>
+      </section>
+
+      <footer><span>NUKEMAP — A VISUAL STUDY OF SCALE</span><span>NOT FOR PREDICTION OR DECISION-MAKING</span></footer>
+    </main>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>
